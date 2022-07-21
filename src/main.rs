@@ -1,35 +1,18 @@
 use std::io::stdin;
 
 fn main() {
-    let mut player_one = String::new();
-    let mut player_two = String::new();
-
-    println!("Enter Player 1");
-    stdin().read_line(&mut player_one).expect("a string");
-    println!("Enter Player 2");
-    stdin().read_line(&mut player_two).expect("a string");
-
-    let player1 = Player {
-        name: String::from(player_one.trim()),
-        sign: 'x'
-    };
-    let player2 = Player {
-        name: String::from(player_two.trim()),
-        sign: 'o'
-    };
-    print_players(&player1, &player2);
-
-    let mut board = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    let mut game = Game::new();
+    game.print_players();
     
-    let mut round = 1;
     let result = loop {
-        if round > 9 { break '-' };
+        if game.round > 9 { break '-' };
 
         println!("----------");
-        println!("ROUND {}", round);
-        print_board(board);
+        println!("ROUND {}", game.round);
+        game.print_board();
 
-        let Player {name: player_name, sign: player_sign} = if round%2 == 1 {&player1} else {&player2};
+        let player_name = if game.round%2 == 1 { &game.player_x } else { &game.player_o };
+        let player_sign = if game.round%2 == 1 { 'x' } else { 'o' };
         println!("{}'s turn ({})", player_name, player_sign);
 
         let mut pos_input = String::new();
@@ -42,19 +25,21 @@ fn main() {
                 continue;
             }
         };
-        if !insert_sign(&mut board, *player_sign, pos) {
+
+        if !game.insert_sign(player_sign, pos) {
             println!("invalid position! please try again");
             continue;
         }
 
-        if check_winner(board) == 'x' {break 'x'}
-        else if check_winner(board) == 'o' {break 'o'}
-        round += 1;
+        if game.check_winner() == 'x' {break 'x'}
+        else if game.check_winner() == 'o' {break 'o'}
+
+        game.round += 1;
     };
 
     println!("----------");
     println!("GAME OVER");
-    print_board(board);
+    game.print_board();
 
     if result != '-' {
         println!("The winner is {}!", result);
@@ -62,49 +47,74 @@ fn main() {
         println!("It's a tie!")
     }
 }
-
-struct Player {
-    name: String,
-    sign: char,
+struct Game {
+    board: [char; 9],
+    player_x: String,
+    player_o: String,
+    round: u8,
 }
 
-fn print_players(player1: &Player, player2: &Player) {
-    println!("{} ({}) vs {} ({})" ,player1.name, player1.sign, player2.name, player2.sign);
+impl Game {
+    fn new() -> Game {
+        let mut player_one = String::new();
+        let mut player_two = String::new();
+    
+        println!("Enter Player 1");
+        stdin().read_line(&mut player_one).expect("a string");
+        println!("Enter Player 2");
+        stdin().read_line(&mut player_two).expect("a string");
+
+        Game {
+            board: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
+            player_x: String::from(player_one.trim()),
+            player_o: String::from(player_two.trim()),
+            round: 1,
+        }
+    }
+
+    fn print_players(&self) {
+        println!("{} ({}) vs {} ({})", self.player_x, 'x', self.player_o, 'o');
+    }
+
+    fn print_board(&self) {
+        let board = self.board;
+        println!("----------\n{} {} {}\n{} {} {}\n{} {} {}\n----------", 
+        board[0], board[1], board[2],
+        board[3], board[4], board[5],
+        board[6], board[7], board[8]);
+    }
+
+    fn insert_sign(&mut self, sign: char, pos: usize) -> bool {
+        if pos < 1 || pos > 9 { return false }
+    
+        let pos_index = pos - 1;
+        if self.board[pos_index] == 'x' || self.board[pos_index] == 'o' { return false }
+    
+        self.board[pos_index] = sign;
+        true
+    }
+
+    fn check_winner(&self) -> char {
+        //horizontals
+        if self.check_three(0, 1, 2) { self.board[0] }
+        else if self.check_three(3, 4, 5) { self.board[3] }
+        else if self.check_three(6, 7, 8) { self.board[6] }
+        //verticals
+        else if self.check_three(0, 3, 6) { self.board[0] }
+        else if self.check_three(1, 4, 7) { self.board[1] }
+        else if self.check_three(2, 5, 8) { self.board[2] }
+        //diagonals
+        else if self.check_three(0, 4, 8) { self.board[0] }
+        else if self.check_three(2, 4, 6) { self.board[2] }
+        //no winner
+        else {'-'}
+    }
+
+    fn check_three(&self, i1: usize, i2: usize, i3: usize) -> bool {
+        if self.board[i1] == self.board[i2] && self.board[i1] == self.board[i3] { true } else { false }
+    }
 }
 
-fn print_board(board: [char; 9]) {
-    println!("----------\n{} {} {}\n{} {} {}\n{} {} {}\n----------", 
-    board[0], board[1], board[2],
-    board[3], board[4], board[5],
-    board[6], board[7], board[8]);
-}
 
-fn insert_sign(board: &mut [char; 9], sign: char, pos: usize) -> bool {
-    if pos < 1 || pos > 9 { return false }
 
-    let pos_index = pos - 1;
-    if board[pos_index] == 'x' || board[pos_index] == 'o' { return false }
 
-    board[pos_index] = sign;
-    true
-}
-
-fn check_winner(board: [char; 9]) -> char {
-    //horizontals
-    if check_three(board, 0, 1, 2) { board[0] }
-    else if check_three(board, 3, 4, 5) { board[3] }
-    else if check_three(board, 6, 7, 8) { board[6] }
-    //verticals
-    else if check_three(board, 0, 3, 6) { board[0] }
-    else if check_three(board, 1, 4, 7) { board[1] }
-    else if check_three(board, 2, 5, 8) { board[2] }
-    //diagonals
-    else if check_three(board, 0, 4, 8) { board[0] }
-    else if check_three(board, 2, 4, 6) { board[2] }
-    //no winner
-    else {'-'}
-}
-
-fn check_three(board: [char; 9], i1: usize, i2: usize, i3: usize) -> bool {
-    if board[i1] == board[i2] && board[i1] == board[i3] { true } else { false }
-}
