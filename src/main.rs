@@ -19,18 +19,42 @@ fn main() {
     };
     print_players(&player1, &player2);
 
-    let board = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    let mut board = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
     
     let mut round = 1;
     let result = loop {
         if round > 9 { break '-' };
+
+        println!("----------");
+        println!("ROUND {}", round);
         print_board(board);
+
         let Player {name: player_name, sign: player_sign} = if round%2 == 1 {&player1} else {&player2};
         println!("{}'s turn ({})", player_name, player_sign);
+
+        let mut pos_input = String::new();
+        println!("Enter position");
+        stdin().read_line(&mut pos_input).expect("a string");
+        let pos: usize = match pos_input.trim().parse() {
+            Ok(i) => i,
+            Err(e) => {
+                println!("{}", e);
+                continue;
+            }
+        };
+        if !insert_sign(&mut board, *player_sign, pos) {
+            println!("invalid position! please try again");
+            continue;
+        }
+
         if check_winner(board) == 'x' {break 'x'}
         else if check_winner(board) == 'o' {break 'o'}
         round += 1;
     };
+
+    println!("----------");
+    println!("GAME OVER");
+    print_board(board);
 
     if result != '-' {
         println!("The winner is {}!", result);
@@ -53,6 +77,16 @@ fn print_board(board: [char; 9]) {
     board[0], board[1], board[2],
     board[3], board[4], board[5],
     board[6], board[7], board[8]);
+}
+
+fn insert_sign(board: &mut [char; 9], sign: char, pos: usize) -> bool {
+    if pos < 1 || pos > 9 { return false }
+
+    let pos_index = pos - 1;
+    if board[pos_index] == 'x' || board[pos_index] == 'o' { return false }
+
+    board[pos_index] = sign;
+    true
 }
 
 fn check_winner(board: [char; 9]) -> char {
