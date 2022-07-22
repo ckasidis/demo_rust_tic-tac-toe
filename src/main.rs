@@ -1,6 +1,7 @@
 use std::io::stdin;
+use rand::Rng;
 
-fn main() {
+fn main() {    
     let mut game = Game::new();
     game.print_players();
     
@@ -47,6 +48,7 @@ fn main() {
         println!("It's a tie!")
     }
 }
+
 struct Game {
     board: [char; 9],
     player_x: String,
@@ -64,10 +66,13 @@ impl Game {
         println!("Enter Player 2");
         stdin().read_line(&mut player_two).expect("a string");
 
+        let mut rng = rand::thread_rng();
+        let random_number = rng.gen_range(0..2);
+    
         Game {
             board: ['1', '2', '3', '4', '5', '6', '7', '8', '9'],
-            player_x: String::from(player_one.trim()),
-            player_o: String::from(player_two.trim()),
+            player_x: String::from(if random_number == 0 {player_one.trim()} else {player_two.trim()}),
+            player_o: String::from(if random_number == 0 {player_two.trim()} else {player_one.trim()}),
             round: 1,
         }
     }
