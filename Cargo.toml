@@ -1,5 +1,5 @@
 [package]
-name = "demo_rust_tic-tac-toe"
+name = "rust_tic-tac-toe"
 version = "0.1.0"
 edition = "2021"
 
